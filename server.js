@@ -1,16 +1,19 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const conexion = require("./db.js");
+const path = require("path"); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
+
+// 2. Cambia la línea de static por esta:
+app.use(express.static(path.join(__dirname, "public")));
 
 // Ruta principal
 app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/public/index.html");
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Ruta para guardar notas
@@ -39,7 +42,7 @@ app.post("/guardar", (req, res) => {
 
 // Ruta para listar estudiantes
 app.get("/listar", (req, res) => {
-    res.sendFile(__dirname + "/public/listar.html");
+    res.sendFile(path.join(__dirname, "public", "listar.html"));
 });
 
 // API para obtener estudiantes como JSON
@@ -69,8 +72,9 @@ app.get("/api/estadisticas", (req, res) => {
 });
 
 // Ruta de estadísticas
+// Ruta de estadísticas
 app.get("/estadisticas", (req, res) => {
-    res.sendFile(__dirname + "/public/estadisticas.html");
+    res.sendFile(path.join(__dirname, "public", "estadisticas.html"));
 });
 
 // Eliminar estudiante
