@@ -5,11 +5,8 @@ const pool = mysql.createPool({
     user: process.env.MYSQLUSER,
     password: process.env.MYSQLPASSWORD,
     database: process.env.MYSQLDATABASE,
-    port: process.env.MYSQLPORT || 3306, // Intentará usar 36933 de Vercel
-    ssl: { rejectUnauthorized: false },
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    port: process.env.MYSQLPORT || 3306,
+    ssl: { rejectUnauthorized: false }
 });
 
 module.exports = pool.promise();
