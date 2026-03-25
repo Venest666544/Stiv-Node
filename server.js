@@ -7,8 +7,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// 2. Cambia la línea de static por esta:
 app.use(express.static(path.join(__dirname, "public")));
 
 // Ruta principal
@@ -16,28 +14,28 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Ruta para guardar notas
-app.post("/guardar", (req, res) => {
-    const nombre = req.body.nombre;
-    const n1 = parseFloat(req.body.n1);
-    const n2 = parseFloat(req.body.n2);
-    const n3 = parseFloat(req.body.n3);
+// Ruta para guardar notas (CORREGIDA CON ASYNC/AWAIT)
+app.post("/guardar", async (req, res) => {
+    const { nombre, n1, n2, n3 } = req.body;
+    const nota1 = parseFloat(n1);
+    const nota2 = parseFloat(n2);
+    const nota3 = parseFloat(n3);
 
-    if (!nombre || [n1, n2, n3].some(n => isNaN(n) || n < 1 || n > 5)) {
-        return res.sendFile(__dirname + "/public/error.html");
+    if (!nombre || [nota1, nota2, nota3].some(n => isNaN(n) || n < 1 || n > 5)) {
+        return res.sendFile(path.join(__dirname, "public", "error.html"));
     }
 
-    const promedio = ((n1 + n2 + n3) / 3).toFixed(2);
+    const promedio = ((nota1 + nota2 + nota3) / 3).toFixed(2);
     const estado = promedio >= 3 ? "Aprobado" : "Reprobado";
     const sql = "INSERT INTO estudiantes (nombre, nota1, nota2, nota3, promedio, estado) VALUES (?,?,?,?,?,?)";
 
-    conexion.query(sql, [nombre, n1, n2, n3, promedio, estado], (err) => {
-        if (err) {
-            console.error("❌ Error en DB:", err);
-            return res.status(500).send("Error en la base de datos");
-        }
+    try {
+        await conexion.query(sql, [nombre, nota1, nota2, nota3, promedio, estado]);
         res.redirect("/listar");
-    });
+    } catch (err) {
+        console.error("❌ Error en DB:", err);
+        res.status(500).send("Error en la base de datos");
+    }
 });
 
 // Ruta para listar estudiantes
@@ -45,16 +43,18 @@ app.get("/listar", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "listar.html"));
 });
 
-// API para obtener estudiantes como JSON
-app.get("/api/estudiantes", (req, res) => {
-    conexion.query("SELECT * FROM estudiantes ORDER BY id DESC", (err, filas) => {
-        if (err) return res.status(500).json({ error: err.message });
+// API para obtener estudiantes (CORREGIDA)
+app.get("/api/estudiantes", async (req, res) => {
+    try {
+        const [filas] = await conexion.query("SELECT * FROM estudiantes ORDER BY id DESC");
         res.json(filas);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Estadisticas
-app.get("/api/estadisticas", (req, res) => {
+// API Estadisticas (CORREGIDA)
+app.get("/api/estadisticas", async (req, res) => {
     const sql = `
         SELECT 
             COUNT(*) AS total,
@@ -65,25 +65,27 @@ app.get("/api/estadisticas", (req, res) => {
             MIN(promedio) AS nota_minima
         FROM estudiantes
     `;
-    conexion.query(sql, (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const [rows] = await conexion.query(sql);
         res.json(rows[0]);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Ruta de estadísticas
-// Ruta de estadísticas
 app.get("/estadisticas", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "estadisticas.html"));
 });
 
-// Eliminar estudiante
-app.post("/eliminar/:id", (req, res) => {
+// Eliminar estudiante (CORREGIDA)
+app.post("/eliminar/:id", async (req, res) => {
     const id = req.params.id;
-    conexion.query("DELETE FROM estudiantes WHERE id = ?", [id], (err) => {
-        if (err) throw err;
+    try {
+        await conexion.query("DELETE FROM estudiantes WHERE id = ?", [id]);
         res.redirect("/listar");
-    });
+    } catch (err) {
+        res.status(500).send("Error al eliminar");
+    }
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor ejecutando en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor listo en puerto ${PORT}`));
