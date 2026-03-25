@@ -26,10 +26,13 @@ app.post("/guardar", (req, res) => {
 
     const promedio = ((n1 + n2 + n3) / 3).toFixed(2);
     const estado = promedio >= 3 ? "Aprobado" : "Reprobado";
-
     const sql = "INSERT INTO estudiantes (nombre, nota1, nota2, nota3, promedio, estado) VALUES (?,?,?,?,?,?)";
+
     conexion.query(sql, [nombre, n1, n2, n3, promedio, estado], (err) => {
-        if (err) throw err;
+        if (err) {
+            console.error("❌ Error en DB:", err);
+            return res.status(500).send("Error en la base de datos");
+        }
         res.redirect("/listar");
     });
 });
