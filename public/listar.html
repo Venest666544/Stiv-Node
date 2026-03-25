@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeBook — Estudiantes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="page-inner">
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">◈</span>
+        <span class="brand-name">GradeBook</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/listar" class="nav-link active">Estudiantes</a>
+        <a href="/estadisticas" class="nav-link">Estadísticas</a>
+    </div>
+</nav>
+
+<div class="inner-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Estudiantes</h1>
+            <p class="page-subtitle">Todos los registros del sistema</p>
+        </div>
+        <a href="/" class="btn-outline">+ Nuevo Registro</a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍  Buscar por nombre..." class="search-input">
+        <select id="filterEstado" class="filter-select">
+            <option value="">Todos los estados</option>
+            <option value="Aprobado">Aprobados</option>
+            <option value="Reprobado">Reprobados</option>
+        </select>
+    </div>
+
+    <div id="loadingMsg" class="loading-msg">Cargando estudiantes...</div>
+
+    <div class="table-wrapper" id="tableWrapper" style="display:none">
+        <table class="grade-table" id="studentsTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Nota 1</th>
+                    <th>Nota 2</th>
+                    <th>Nota 3</th>
+                    <th>Promedio</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div id="emptyMsg" class="empty-msg" style="display:none">No se encontraron registros.</div>
+    </div>
+</div>
+
+<script>
+let allStudents = [];
+
+async function loadStudents() {
+    try {
+        const res = await fetch('/api/estudiantes');
+        allStudents = await res.json();
+        renderTable(allStudents);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('tableWrapper').style.display = 'block';
+    } catch (e) {
+        document.getElementById('loadingMsg').textContent = 'Error al cargar los datos.';
+    }
+}
+
+function renderTable(students) {
+    const tbody = document.getElementById('tableBody');
+    const emptyMsg = document.getElementById('emptyMsg');
+
+    if (students.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg.style.display = 'block';
+        return;
+    }
+    emptyMsg.style.display = 'none';
+
+    tbody.innerHTML = students.map((s, i) => `
+        <tr class="table-row ${s.estado === 'Aprobado' ? 'row-aprobado' : 'row-reprobado'}">
+            <td class="td-id">${s.id}</td>
+            <td class="td-nombre">${s.nombre}</td>
+            <td>${Number(s.nota1).toFixed(1)}</td>
+            <td>${Number(s.nota2).toFixed(1)}</td>
+            <td>${Number(s.nota3).toFixed(1)}</td>
+            <td class="td-promedio"><strong>${Number(s.promedio).toFixed(2)}</strong></td>
+            <td>
+                <span class="badge ${s.estado === 'Aprobado' ? 'badge-green' : 'badge-red'}">
+                    ${s.estado === 'Aprobado' ? '✓' : '✗'} ${s.estado}
+                </span>
+            </td>
+            <td>
+                <form action="/eliminar/${s.id}" method="post" onsubmit="return confirm('¿Eliminar a ${s.nombre}?')">
+                    <button type="submit" class="btn-delete">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('filterEstado').addEventListener('change', applyFilters);
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const estado = document.getElementById('filterEstado').value;
+    const filtered = allStudents.filter(s => {
+        const matchName = s.nombre.toLowerCase().includes(search);
+        const matchEstado = estado === '' || s.estado === estado;
+        return matchName && matchEstado;
+    });
+    renderTable(filtered);
+}
+
+loadStudents();
+</script>
+</body>
+</html>

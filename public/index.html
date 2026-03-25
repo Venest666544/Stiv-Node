@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeBook — Registro de Notas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">◈</span>
+        <span class="brand-name">GradeBook</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link active">Inicio</a>
+        <a href="/listar" class="nav-link">Estudiantes</a>
+        <a href="/estadisticas" class="nav-link">Estadísticas</a>
+    </div>
+</nav>
+
+<main class="main-hero">
+    <div class="hero-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <div class="hero-content">
+        <div class="badge-pill">Sistema de Gestión Académica</div>
+        <h1 class="hero-title">Registra<br><em>notas</em> con<br>precisión.</h1>
+        <p class="hero-sub">Ingresa las calificaciones de tus estudiantes y obtén el promedio al instante.</p>
+
+        <div class="card form-card">
+            <div class="card-header">
+                <span class="card-icon">✏️</span>
+                <span>Nuevo Registro</span>
+            </div>
+            <form action="/guardar" method="post" class="grade-form">
+                <div class="field">
+                    <label>Nombre del Estudiante</label>
+                    <input type="text" name="nombre" placeholder="Ej: Juan García" required>
+                </div>
+                <div class="fields-row">
+                    <div class="field">
+                        <label>Nota 1</label>
+                        <input type="number" name="n1" min="1" max="5" step="0.1" placeholder="1–5" required>
+                    </div>
+                    <div class="field">
+                        <label>Nota 2</label>
+                        <input type="number" name="n2" min="1" max="5" step="0.1" placeholder="1–5" required>
+                    </div>
+                    <div class="field">
+                        <label>Nota 3</label>
+                        <input type="number" name="n3" min="1" max="5" step="0.1" placeholder="1–5" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span>Guardar Registro</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="side-links">
+        <a href="/listar" class="side-card">
+            <span class="side-icon">👥</span>
+            <div>
+                <div class="side-title">Ver Estudiantes</div>
+                <div class="side-desc">Lista completa de registros</div>
+            </div>
+            <span class="side-arrow">↗</span>
+        </a>
+        <a href="/estadisticas" class="side-card">
+            <span class="side-icon">📊</span>
+            <div>
+                <div class="side-title">Estadísticas</div>
+                <div class="side-desc">Rendimiento general del grupo</div>
+            </div>
+            <span class="side-arrow">↗</span>
+        </a>
+    </div>
+</main>
+
+</body>
+</html>

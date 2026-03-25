@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeBook — Estadísticas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="page-inner">
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">◈</span>
+        <span class="brand-name">GradeBook</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/listar" class="nav-link">Estudiantes</a>
+        <a href="/estadisticas" class="nav-link active">Estadísticas</a>
+    </div>
+</nav>
+
+<div class="inner-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Estadísticas</h1>
+            <p class="page-subtitle">Rendimiento general del grupo</p>
+        </div>
+        <a href="/" class="btn-outline">+ Nuevo Registro</a>
+    </div>
+
+    <div id="statsContent" style="display:none">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-label">Total Estudiantes</div>
+                <div class="kpi-value" id="kpiTotal">—</div>
+            </div>
+            <div class="kpi-card kpi-green">
+                <div class="kpi-label">Aprobados</div>
+                <div class="kpi-value" id="kpiAprobados">—</div>
+            </div>
+            <div class="kpi-card kpi-red">
+                <div class="kpi-label">Reprobados</div>
+                <div class="kpi-value" id="kpiReprobados">—</div>
+            </div>
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-label">Promedio General</div>
+                <div class="kpi-value" id="kpiPromedio">—</div>
+            </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">Distribución de Estado</div>
+                <div class="donut-wrapper">
+                    <canvas id="donutChart" width="220" height="220"></canvas>
+                    <div class="donut-center">
+                        <div id="donutPct" class="donut-pct">0%</div>
+                        <div class="donut-label">aprobados</div>
+                    </div>
+                </div>
+                <div class="donut-legend">
+                    <span class="legend-dot dot-green"></span> Aprobados
+                    <span class="legend-dot dot-red" style="margin-left:16px"></span> Reprobados
+                </div>
+            </div>
+
+            <div class="chart-card chart-wide">
+                <div class="chart-title">Rango de Notas</div>
+                <div class="range-bars" id="rangeBars"></div>
+            </div>
+        </div>
+
+        <!-- Min/Max -->
+        <div class="minmax-row">
+            <div class="minmax-card">
+                <span class="minmax-icon">🏆</span>
+                <div class="minmax-label">Nota más alta</div>
+                <div class="minmax-value" id="notaMax">—</div>
+            </div>
+            <div class="minmax-card">
+                <span class="minmax-icon">📉</span>
+                <div class="minmax-label">Nota más baja</div>
+                <div class="minmax-value" id="notaMin">—</div>
+            </div>
+        </div>
+    </div>
+    <div id="loadingMsg" class="loading-msg">Cargando estadísticas...</div>
+</div>
+
+<script>
+async function loadStats() {
+    try {
+        const [statsRes, studentsRes] = await Promise.all([
+            fetch('/api/estadisticas'),
+            fetch('/api/estudiantes')
+        ]);
+        const stats = await statsRes.json();
+        const students = await studentsRes.json();
+
+        document.getElementById('kpiTotal').textContent = stats.total;
+        document.getElementById('kpiAprobados').textContent = stats.aprobados;
+        document.getElementById('kpiReprobados').textContent = stats.reprobados;
+        document.getElementById('kpiPromedio').textContent = Number(stats.promedio_general).toFixed(2);
+        document.getElementById('notaMax').textContent = Number(stats.nota_maxima).toFixed(2);
+        document.getElementById('notaMin').textContent = Number(stats.nota_minima).toFixed(2);
+
+        const pct = stats.total > 0 ? Math.round((stats.aprobados / stats.total) * 100) : 0;
+        document.getElementById('donutPct').textContent = pct + '%';
+
+        drawDonut(pct);
+        drawRangeBars(students);
+
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('statsContent').style.display = 'block';
+    } catch (e) {
+        document.getElementById('loadingMsg').textContent = 'Error al cargar estadísticas.';
+    }
+}
+
+function drawDonut(pct) {
+    const canvas = document.getElementById('donutChart');
+    const ctx = canvas.getContext('2d');
+    const cx = 110, cy = 110, r = 85, lineW = 22;
+    const angle = (pct / 100) * Math.PI * 2;
+
+    ctx.clearRect(0, 0, 220, 220);
+
+    // Background ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = lineW;
+    ctx.stroke();
+
+    // Reprobados
+    if (pct < 100) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, -Math.PI / 2 + angle, 3 * Math.PI / 2);
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    // Aprobados
+    if (pct > 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + angle);
+        ctx.strokeStyle = '#2ecc71';
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+}
+
+function drawRangeBars(students) {
+    const ranges = { '1.0-1.9': 0, '2.0-2.9': 0, '3.0-3.9': 0, '4.0-5.0': 0 };
+    students.forEach(s => {
+        const p = parseFloat(s.promedio);
+        if (p < 2) ranges['1.0-1.9']++;
+        else if (p < 3) ranges['2.0-2.9']++;
+        else if (p < 4) ranges['3.0-3.9']++;
+        else ranges['4.0-5.0']++;
+    });
+
+    const max = Math.max(...Object.values(ranges), 1);
+    const colors = { '1.0-1.9': '#ff6b6b', '2.0-2.9': '#ffa94d', '3.0-3.9': '#74c0fc', '4.0-5.0': '#2ecc71' };
+
+    const container = document.getElementById('rangeBars');
+    container.innerHTML = Object.entries(ranges).map(([label, count]) => `
+        <div class="range-row">
+            <div class="range-label">${label}</div>
+            <div class="range-track">
+                <div class="range-fill" style="width:${(count / max) * 100}%; background:${colors[label]}"></div>
+            </div>
+            <div class="range-count">${count}</div>
+        </div>
+    `).join('');
+}
+
+loadStats();
+</script>
+</body>
+</html>
