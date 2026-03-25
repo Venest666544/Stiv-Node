@@ -1,14 +1,18 @@
 const mysql = require('mysql2');
 
-// Usamos variables de entorno (process.env) para la nube
-// Si no existen usará los valores por defecto tras el "||"
-const conexion = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'notas_db',
-    port: process.env.DB_PORT || 3306
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
+
+// Exportamos el "pool" para que server.js lo use
+module.exports = pool;
 
 conexion.connect((err) => {
     if (err) {
